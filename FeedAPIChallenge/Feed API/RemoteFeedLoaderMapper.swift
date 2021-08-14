@@ -3,14 +3,10 @@ import Foundation
 
 internal final class RemoteFeedImagesMapper {
 	private struct Root: Decodable {
-		let remoteFeedImages: [RemoteFeedImage]
-
-		enum CodingKeys: String, CodingKey {
-			case remoteFeedImages = "items"
-		}
+		let items: [RemoteFeedImage]
 
 		var feedImages: [FeedImage] {
-			return remoteFeedImages.map { $0.remoteFeedImage }
+			return items.map { $0.remoteFeedImage }
 		}
 	}
 
@@ -27,12 +23,9 @@ internal final class RemoteFeedImagesMapper {
 
 	private static var OK_200: Int { return 200 }
 
+	
 	internal static func map(_ data: Data, from response: HTTPURLResponse) -> RemoteFeedLoader.Result {
-		guard response.statusCode == OK_200 else {
-			// HTTP is a transport layer so any error indicates the payload could not be delivered to the application
-			return .failure(RemoteFeedLoader.Error.connectivity)
-		}
-		guard let root = try? JSONDecoder().decode(Root.self, from: data) else {
+		guard response.statusCode == OK_200, let root = try? JSONDecoder().decode(Root.self, from: data) else {
 			return .failure(RemoteFeedLoader.Error.invalidData)
 		}
 		return .success(root.feedImages)
